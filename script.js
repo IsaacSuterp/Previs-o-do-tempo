@@ -1,7 +1,7 @@
 // script.js
 document.addEventListener('DOMContentLoaded', () => {
     const API_KEY = '3de8f788eb837e9700999ed1959d984c'; // !!! SUBSTITUA PELA SUA CHAVE API DO OPENWEATHERMAP !!!
-    if (API_KEY === '3de8f788eb837e9700999ed1959d984c') {
+    if (API_KEY === 'SUA CHAVE AQUI') {
         displayError('CHAVE API NÃO CONFIGURADA. Por favor, adicione sua chave API da OpenWeatherMap no arquivo script.js.');
     }
 
