@@ -1,40 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsão do Tempo Estilosa</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
 <body>
-    <header>
-        <h1>Previsão do Tempo Estilosa</h1>
-    </header>
-    <main>
-        <section id="search-area">
-            <input type="text" id="city-input" placeholder="Digite o nome da cidade">
-            <button id="search-button">Buscar</button>
+    <div class="container">
+        <header>
+            <h1>Previsão do Tempo</h1>
+        </header>
+
+        <main>
+            <section class="search-area">
+                <input type="text" id="city-input" placeholder="Digite o nome da cidade...">
+                <button id="search-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                    Buscar
+                </button>
             </section>
 
-        <section id="loading-spinner" style="display:none;">
+            <section id="loading-spinner" class="loading-spinner" style="display:none;">
+                <div class="spinner"></div>
+                <p>Carregando...</p>
             </section>
 
-        <section id="weather-info" style="display:none;">
-            <div id="current-weather">
-                <h2 id="city-name"></h2>
-                <div id="current-temp"></div>
-                <img id="current-weather-icon" src="" alt="Ícone do tempo">
-                <p id="current-condition"></p>
-                <p>Sensação Térmica: <span id="feels-like"></span></p>
-                <p>Umidade: <span id="humidity"></span></p>
-                <p>Vento: <span id="wind-speed"></span></p>
+            <section id="weather-info" class="weather-info-area" style="display:none;">
+                <div class="current-weather-card animated-component">
+                    <h2 id="city-name">--</h2>
+                    <div class="main-info">
+                        <img id="current-weather-icon" src="https://openweathermap.org/img/wn/01d@2x.png" alt="Ícone do tempo" class="weather-icon">
+                        <div id="current-temp" class="temperature">--°C</div>
+                    </div>
+                    <p id="current-condition" class="condition">--</p>
+                    <div class="details">
+                        <p>Sensação: <span id="feels-like">--°C</span></p>
+                        <p>Umidade: <span id="humidity">--%</span></p>
+                        <p>Vento: <span id="wind-speed">-- km/h</span></p>
+                    </div>
                 </div>
 
-            <div id="forecast-weather">
-                <h3>Previsão para os Próximos Dias</h3>
-                <div id="forecast-container">
-                    </div>
-            </div>
-        </section>
+                <div class="forecast-weather animated-component">
+                    <h3>Previsão para os Próximos Dias</h3>
+                    <div id="forecast-container" class="forecast-container">
+                        </div>
+                </div>
+            </section>
 
-        <section id="error-message" style="display:none;">
-            <p>Não foi possível encontrar a previsão do tempo para a cidade informada. Tente novamente.</p>
-        </section>
-    </main>
-    <footer>
-        <p>Desenvolvido com ❤️ e JavaScript</p>
-    </footer>
+            <section id="error-message" class="error-message" style="display:none;">
+                <p>Não foi possível encontrar a previsão do tempo. Verifique o nome da cidade e tente novamente.</p>
+            </section>
+        </main>
+
+        <footer>
+            <p>Powered by <a href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></p>
+        </footer>
+    </div>
+
     <script src="scripts.js"></script>
 </body>
+</html>
