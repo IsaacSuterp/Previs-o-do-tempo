@@ -1,80 +1,40 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MeteoCore X - Previsão Futurista</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
 <body>
-    <div class="overlay-scanlines"></div>
-    <div class="container">
-        <header class="site-header">
-            <h1>MeteoCore <span class="highlight">X</span></h1>
-            <div class="search-container">
-                <input type="text" id="city-input" placeholder="Digite a cidade...">
-                <button id="search-button" aria-label="Buscar Cidade">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396 1.414-1.414-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8 3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6-6-2.691-6-6 2.691-6 6-6z"/></svg>
-                </button>
-                <button id="geolocation-button" aria-label="Usar Localização Atual">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 2C7.589 2 4 5.589 4 9.995 3.971 16.44 11.696 21.784 12 22c.304-.216 8.029-5.56 8-12.005C20 5.589 16.411 2 12 2zm0 12c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z"/></svg>
-                </button>
-            </div>
-        </header>
+    <header>
+        <h1>Previsão do Tempo Estilosa</h1>
+    </header>
+    <main>
+        <section id="search-area">
+            <input type="text" id="city-input" placeholder="Digite o nome da cidade">
+            <button id="search-button">Buscar</button>
+            </section>
 
-        <main>
-            <div id="loading-indicator" class="loading-indicator" style="display: none;">
-                <div class="spinner"></div>
-                <p>Analisando Fluxos Temporais...</p>
-            </div>
-            <div id="error-message" class="error-message" style="display: none;"></div>
+        <section id="loading-spinner" style="display:none;">
+            </section>
 
-            <section id="current-weather" class="weather-panel current-weather-panel" style="display: none;">
-                <div class="current-weather-main">
-                    <div>
-                        <h2 id="city-name">--</h2>
-                        <p id="current-date">--</p>
-                        <p id="weather-description">--</p>
-                    </div>
-                    <div class="temperature-container">
-                        <img id="weather-icon" src="https://openweathermap.org/img/wn/01d@2x.png" alt="Ícone do tempo" width="80" height="80">
-                        <p id="temperature">--°</p>
-                        <div class="unit-toggle">
-                            <button id="celsius-button" class="active">C</button> |
-                            <button id="fahrenheit-button">F</button>
-                        </div>
-                    </div>
+        <section id="weather-info" style="display:none;">
+            <div id="current-weather">
+                <h2 id="city-name"></h2>
+                <div id="current-temp"></div>
+                <img id="current-weather-icon" src="" alt="Ícone do tempo">
+                <p id="current-condition"></p>
+                <p>Sensação Térmica: <span id="feels-like"></span></p>
+                <p>Umidade: <span id="humidity"></span></p>
+                <p>Vento: <span id="wind-speed"></span></p>
                 </div>
-                <div class="current-weather-details">
-                    <div class="detail-item"><span>Sensação</span><p id="feels-like">--°</p></div>
-                    <div class="detail-item"><span>Umidade</span><p id="humidity">--%</p></div>
-                    <div class="detail-item"><span>Vento</span><p id="wind-speed">-- km/h</p></div>
-                    <div class="detail-item"><span>Pressão</span><p id="pressure">-- hPa</p></div>
-                    <div class="detail-item"><span>Nascer do Sol</span><p id="sunrise">--:--</p></div>
-                    <div class="detail-item"><span>Pôr do Sol</span><p id="sunset">--:--</p></div>
-                </div>
-            </section>
 
-            <section id="hourly-forecast" class="weather-panel forecast-panel" style="display: none;">
-                <h3>Projeção Horária</h3>
-                <div id="hourly-forecast-container" class="hourly-forecast-container">
+            <div id="forecast-weather">
+                <h3>Previsão para os Próximos Dias</h3>
+                <div id="forecast-container">
                     </div>
-            </section>
+            </div>
+        </section>
 
-            <section id="daily-forecast" class="weather-panel forecast-panel" style="display: none;">
-                <h3>Projeção Estendida (5 Dias)</h3>
-                <div id="daily-forecast-container" class="daily-forecast-container">
-                    </div>
-            </section>
-        </main>
-
-        <footer>
-            <p>Interface de Dados Climáticos <span class="highlight">MeteoCore X</span> | Dados fornecidos por OpenWeatherMap</p>
-        </footer>
-    </div>
-    <script src="script.js"></script>
+        <section id="error-message" style="display:none;">
+            <p>Não foi possível encontrar a previsão do tempo para a cidade informada. Tente novamente.</p>
+        </section>
+    </main>
+    <footer>
+        <p>Desenvolvido com ❤️ e JavaScript</p>
+    </footer>
+    <script src="scripts.js"></script>
 </body>
-</html>
