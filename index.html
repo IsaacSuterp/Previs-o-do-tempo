@@ -4,17 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WeatherNow - Previsão do Tempo</title>
+    
+    <!-- Performance optimizations -->
+    <meta name="description" content="Previsão do tempo em tempo real com interface moderna e dados precisos">
+    <meta name="theme-color" content="#667eea">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap"></noscript>
+    
+    <!-- Preconnect to API domains -->
+    <link rel="preconnect" href="https://geocoding-api.open-meteo.com">
+    <link rel="preconnect" href="https://api.open-meteo.com">
+    
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Critical CSS inlined for performance -->
+    <style>
+        /* Critical above-the-fold styles */
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            margin: 0;
+            color: white;
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .hidden { 
+            display: none !important; 
+        }
+    </style>
 </head>
 <body>
-    <!-- Floating particles background -->
+    <!-- Optimized floating particles with reduced count -->
     <div class="floating-particles">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
         <div class="particle"></div>
         <div class="particle"></div>
         <div class="particle"></div>
@@ -22,36 +51,43 @@
     </div>
 
     <div class="container">
-        <header class="header">
+        <header class="header above-fold">
             <h1 class="logo">
                 <span class="weather-icon">🌤️</span>
                 WeatherNow
             </h1>
         </header>
 
-        <main class="main-content">
+        <main class="main-content above-fold">
             <div class="search-section">
                 <div class="search-container">
-                    <input type="text" id="cityInput" placeholder="Digite o nome da cidade..." class="search-input">
-                    <button id="searchBtn" class="search-btn">
-                        <span class="search-icon">🔍</span>
+                    <input 
+                        type="text" 
+                        id="cityInput" 
+                        placeholder="Digite o nome da cidade..." 
+                        class="search-input"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <button id="searchBtn" class="search-btn" type="button">
+                        <span class="search-icon" aria-hidden="true">🔍</span>
                         Buscar
                     </button>
                 </div>
-                <button id="locationBtn" class="location-btn">
-                    <span class="location-icon">📍</span>
+                <button id="locationBtn" class="location-btn" type="button">
+                    <span class="location-icon" aria-hidden="true">📍</span>
                     Usar minha localização
                 </button>
             </div>
 
-            <div id="weatherCard" class="weather-card hidden">
+            <div id="weatherCard" class="weather-card hidden below-fold">
                 <div class="weather-header">
                     <div class="location-info">
                         <h2 id="cityName" class="city-name"></h2>
                         <p id="currentDate" class="current-date"></p>
                     </div>
                     <div class="weather-icon-main">
-                        <span id="weatherIcon" class="main-weather-icon"></span>
+                        <span id="weatherIcon" class="main-weather-icon" aria-hidden="true"></span>
                     </div>
                 </div>
 
@@ -68,28 +104,28 @@
 
                 <div class="weather-details">
                     <div class="detail-item">
-                        <span class="detail-icon">💨</span>
+                        <span class="detail-icon" aria-hidden="true">💨</span>
                         <div class="detail-info">
                             <span class="detail-label">Vento</span>
                             <span id="windSpeed" class="detail-value"></span>
                         </div>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-icon">💧</span>
+                        <span class="detail-icon" aria-hidden="true">💧</span>
                         <div class="detail-info">
                             <span class="detail-label">Umidade</span>
                             <span id="humidity" class="detail-value"></span>
                         </div>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-icon">👁️</span>
+                        <span class="detail-icon" aria-hidden="true">👁️</span>
                         <div class="detail-info">
                             <span class="detail-label">Visibilidade</span>
                             <span id="visibility" class="detail-value"></span>
                         </div>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-icon">🌡️</span>
+                        <span class="detail-icon" aria-hidden="true">🌡️</span>
                         <div class="detail-info">
                             <span class="detail-label">Pressão</span>
                             <span id="pressure" class="detail-value"></span>
@@ -98,7 +134,7 @@
                 </div>
             </div>
 
-            <div id="forecastSection" class="forecast-section hidden">
+            <div id="forecastSection" class="forecast-section hidden below-fold">
                 <h3 class="forecast-title">Previsão para os próximos dias</h3>
                 <div id="forecastContainer" class="forecast-container">
                     <!-- Forecast items will be inserted here -->
@@ -106,17 +142,18 @@
             </div>
 
             <div id="loadingSpinner" class="loading-spinner hidden">
-                <div class="spinner"></div>
+                <div class="spinner" aria-hidden="true"></div>
                 <p>Carregando informações do clima...</p>
             </div>
 
-            <div id="errorMessage" class="error-message hidden">
-                <span class="error-icon">⚠️</span>
+            <div id="errorMessage" class="error-message hidden" role="alert">
+                <span class="error-icon" aria-hidden="true">⚠️</span>
                 <p id="errorText"></p>
             </div>
         </main>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Load JavaScript asynchronously -->
+    <script src="script.js" async></script>
 </body>
 </html>
