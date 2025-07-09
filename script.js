@@ -2,13 +2,20 @@ class WeatherApp {
   constructor() {
     this.geocodingAPI = "https://geocoding-api.open-meteo.com/v1/search"
     this.weatherAPI = "https://api.open-meteo.com/v1/forecast"
+
+    // Performance optimizations
+    this.debounceTimer = null
+    this.animationFrameId = null
+    this.isLoading = false
+
     this.initializeElements()
     this.bindEvents()
     this.updateCurrentDate()
-    this.initializeAdvancedEffects()
+    this.initializeOptimizedEffects()
   }
 
   initializeElements() {
+    // Cache DOM elements for performance
     this.cityInput = document.getElementById("cityInput")
     this.searchBtn = document.getElementById("searchBtn")
     this.locationBtn = document.getElementById("locationBtn")
@@ -33,109 +40,151 @@ class WeatherApp {
   }
 
   bindEvents() {
-    this.searchBtn.addEventListener("click", () => this.handleSearch())
-    this.locationBtn.addEventListener("click", () => this.getCurrentLocation())
-    this.cityInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        this.handleSearch()
-      }
+    // Optimized event listeners with passive option where possible
+    this.searchBtn.addEventListener("click", this.handleSearch.bind(this))
+    this.locationBtn.addEventListener("click", this.handleLocationClick.bind(this))
+
+    // Debounced input handler
+    this.cityInput.addEventListener("input", this.debounceInput.bind(this), { passive: true })
+    this.cityInput.addEventListener("keypress", this.handleKeyPress.bind(this))
+
+    // Optimized button effects
+    this.addOptimizedButtonEffects()
+  }
+
+  // Debounced input for performance
+  debounceInput(e) {
+    clearTimeout(this.debounceTimer)
+    this.debounceTimer = setTimeout(() => {
+      // Could add autocomplete here
+    }, 300)
+  }
+
+  handleKeyPress(e) {
+    if (e.key === "Enter" && !this.isLoading) {
+      this.handleSearch()
+    }
+  }
+
+  initializeOptimizedEffects() {
+    // Reduced particle system for better performance
+    this.initializeOptimizedParticles()
+
+    // Optimized cursor effects
+    this.initializeOptimizedCursor()
+
+    // Intersection Observer for lazy animations
+    this.initializeIntersectionObserver()
+  }
+
+  initializeOptimizedParticles() {
+    const particles = document.querySelectorAll(".particle")
+    particles.forEach((particle, index) => {
+      // Stagger animation start times
+      particle.style.animationDelay = `${index * 2}s`
+      particle.style.animationDuration = `${8 + Math.random() * 4}s`
     })
-
-    // Add advanced button effects
-    this.addButtonEffects()
   }
 
-  initializeAdvancedEffects() {
-    // Advanced cursor trail effect
-    this.initializeCursorTrail()
-
-    // Dynamic background particles
-    this.animateParticles()
-
-    // Add scroll-triggered animations
-    this.initializeScrollAnimations()
-  }
-
-  initializeCursorTrail() {
+  initializeOptimizedCursor() {
     let mouseX = 0,
       mouseY = 0
-    const trailElements = []
+    let isMoving = false
 
-    document.addEventListener("mousemove", (e) => {
+    // Throttled mouse tracking
+    const throttledMouseMove = this.throttle((e) => {
       mouseX = e.clientX
       mouseY = e.clientY
 
-      // Create trail element
-      const trail = document.createElement("div")
-      trail.className = "cursor-trail"
-      trail.style.left = mouseX + "px"
-      trail.style.top = mouseY + "px"
-      document.body.appendChild(trail)
-
-      trailElements.push(trail)
-
-      // Remove old trail elements
-      if (trailElements.length > 20) {
-        const oldTrail = trailElements.shift()
-        if (oldTrail && oldTrail.parentNode) {
-          oldTrail.parentNode.removeChild(oldTrail)
-        }
+      if (!isMoving) {
+        isMoving = true
+        this.animationFrameId = requestAnimationFrame(() => {
+          this.updateCursorEffect(mouseX, mouseY)
+          isMoving = false
+        })
       }
+    }, 16) // ~60fps
 
-      // Remove trail after animation
-      setTimeout(() => {
-        if (trail && trail.parentNode) {
-          trail.parentNode.removeChild(trail)
-        }
-      }, 1000)
-    })
+    document.addEventListener("mousemove", throttledMouseMove, { passive: true })
   }
 
-  animateParticles() {
-    const particles = document.querySelectorAll(".particle")
-    particles.forEach((particle, index) => {
-      // Random starting position
-      particle.style.left = Math.random() * 100 + "%"
-      particle.style.animationDelay = Math.random() * 6 + "s"
-      particle.style.animationDuration = 6 + Math.random() * 4 + "s"
-    })
+  updateCursorEffect(x, y) {
+    // Lightweight cursor effect
+    const trail = document.createElement("div")
+    trail.className = "cursor-trail"
+    trail.style.cssText = `
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      left: ${x}px;
+      top: ${y}px;
+      background: rgba(255, 107, 107, 0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      animation: cursorFade 0.8s ease-out forwards;
+    `
+
+    document.body.appendChild(trail)
+
+    // Clean up after animation
+    setTimeout(() => {
+      if (trail.parentNode) {
+        trail.parentNode.removeChild(trail)
+      }
+    }, 800)
   }
 
-  initializeScrollAnimations() {
+  initializeIntersectionObserver() {
     const observerOptions = {
       threshold: 0.1,
-      rootMargin: "0px 0px -50px 0px",
+      rootMargin: "50px",
     }
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.style.animationPlayState = "running"
+          entry.target.classList.add("animate-in")
+          observer.unobserve(entry.target) // Stop observing after animation
         }
       })
     }, observerOptions)
 
-    // Observe elements for scroll animations
-    document.querySelectorAll(".weather-card, .forecast-section").forEach((el) => {
-      observer.observe(el)
-    })
+    // Observe forecast section for lazy animation
+    if (this.forecastSection) {
+      observer.observe(this.forecastSection)
+    }
   }
 
-  addButtonEffects() {
+  addOptimizedButtonEffects() {
     const buttons = [this.searchBtn, this.locationBtn]
 
     buttons.forEach((button) => {
-      button.addEventListener("mouseenter", (e) => {
-        this.createRippleEffect(e.target, e)
-      })
+      // Optimized hover effects
+      button.addEventListener(
+        "mouseenter",
+        (e) => {
+          e.target.style.willChange = "transform, box-shadow"
+        },
+        { passive: true },
+      )
 
+      button.addEventListener(
+        "mouseleave",
+        (e) => {
+          e.target.style.willChange = "auto"
+        },
+        { passive: true },
+      )
+
+      // Optimized click effect
       button.addEventListener("click", (e) => {
-        this.createClickEffect(e.target, e)
+        this.createOptimizedRipple(e.target, e)
       })
     })
   }
 
-  createRippleEffect(element, event) {
+  createOptimizedRipple(element, event) {
     const ripple = document.createElement("span")
     const rect = element.getBoundingClientRect()
     const size = Math.max(rect.width, rect.height)
@@ -148,10 +197,10 @@ class WeatherApp {
       height: ${size}px;
       left: ${x}px;
       top: ${y}px;
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 50%;
       transform: scale(0);
-      animation: ripple 0.6s ease-out;
+      animation: ripple 0.4s ease-out;
       pointer-events: none;
     `
 
@@ -159,41 +208,25 @@ class WeatherApp {
     element.style.overflow = "hidden"
     element.appendChild(ripple)
 
+    // Clean up
     setTimeout(() => {
       if (ripple.parentNode) {
         ripple.parentNode.removeChild(ripple)
       }
-    }, 600)
+    }, 400)
   }
 
-  createClickEffect(element, event) {
-    // Create multiple particles on click
-    for (let i = 0; i < 6; i++) {
-      setTimeout(() => {
-        const particle = document.createElement("div")
-        const rect = element.getBoundingClientRect()
-
-        particle.style.cssText = `
-          position: fixed;
-          width: 4px;
-          height: 4px;
-          background: #ff6b6b;
-          border-radius: 50%;
-          left: ${event.clientX}px;
-          top: ${event.clientY}px;
-          pointer-events: none;
-          z-index: 9999;
-          animation: clickParticle 1s ease-out forwards;
-        `
-
-        document.body.appendChild(particle)
-
-        setTimeout(() => {
-          if (particle.parentNode) {
-            particle.parentNode.removeChild(particle)
-          }
-        }, 1000)
-      }, i * 50)
+  // Utility function for throttling
+  throttle(func, limit) {
+    let inThrottle
+    return function () {
+      const args = arguments
+      
+      if (!inThrottle) {
+        func.apply(this, args)
+        inThrottle = true
+        setTimeout(() => (inThrottle = false), limit)
+      }
     }
   }
 
@@ -209,6 +242,8 @@ class WeatherApp {
   }
 
   async handleSearch() {
+    if (this.isLoading) return
+
     const city = this.cityInput.value.trim()
     if (!city) {
       this.showError("Por favor, digite o nome de uma cidade.")
@@ -218,7 +253,9 @@ class WeatherApp {
     await this.getWeatherByCity(city)
   }
 
-  async getCurrentLocation() {
+  async handleLocationClick() {
+    if (this.isLoading) return
+
     if (!navigator.geolocation) {
       this.showError("Geolocalização não é suportada pelo seu navegador.")
       return
@@ -235,6 +272,7 @@ class WeatherApp {
         this.hideLoading()
         this.showError("Não foi possível obter sua localização. Verifique as permissões do navegador.")
       },
+      { timeout: 10000, enableHighAccuracy: false }, // Optimized geolocation options
     )
   }
 
@@ -292,32 +330,26 @@ class WeatherApp {
 
     const current = data.current
 
-    this.cityName.textContent = country ? `${cityName}, ${country}` : cityName
-    this.weatherIcon.textContent = this.getWeatherIcon(current.weather_code, current.is_day)
-    this.temperature.textContent = Math.round(current.temperature_2m)
-    this.weatherDescription.textContent = this.getWeatherDescription(current.weather_code)
-    this.feelsLike.textContent = `Sensação térmica: ${Math.round(current.apparent_temperature)}°C`
+    // Batch DOM updates for performance
+    requestAnimationFrame(() => {
+      this.cityName.textContent = country ? `${cityName}, ${country}` : cityName
+      this.weatherIcon.textContent = this.getWeatherIcon(current.weather_code, current.is_day)
+      this.temperature.textContent = Math.round(current.temperature_2m)
+      this.weatherDescription.textContent = this.getWeatherDescription(current.weather_code)
+      this.feelsLike.textContent = `Sensação térmica: ${Math.round(current.apparent_temperature)}°C`
 
-    this.windSpeed.textContent = `${Math.round(current.wind_speed_10m)} km/h`
-    this.humidity.textContent = `${current.relative_humidity_2m}%`
-    this.visibility.textContent = this.getVisibilityFromCloudCover(current.cloud_cover)
-    this.pressure.textContent = `${Math.round(current.pressure_msl)} hPa`
+      this.windSpeed.textContent = `${Math.round(current.wind_speed_10m)} km/h`
+      this.humidity.textContent = `${current.relative_humidity_2m}%`
+      this.visibility.textContent = this.getVisibilityFromCloudCover(current.cloud_cover)
+      this.pressure.textContent = `${Math.round(current.pressure_msl)} hPa`
 
-    // Add staggered animation to weather card
-    this.weatherCard.classList.remove("hidden")
-    this.animateWeatherCardElements()
-  }
-
-  animateWeatherCardElements() {
-    const elements = this.weatherCard.querySelectorAll(".weather-header, .temperature-section, .detail-item")
-    elements.forEach((el, index) => {
-      el.style.animationDelay = `${index * 0.1}s`
-      el.classList.add("animate-in")
+      this.weatherCard.classList.remove("hidden")
     })
   }
 
   displayForecast(dailyData) {
-    this.forecastContainer.innerHTML = ""
+    // Use DocumentFragment for efficient DOM manipulation
+    const fragment = document.createDocumentFragment()
 
     for (let i = 1; i < Math.min(6, dailyData.time.length); i++) {
       const date = new Date(dailyData.time[i])
@@ -325,7 +357,6 @@ class WeatherApp {
 
       const forecastItem = document.createElement("div")
       forecastItem.className = "forecast-item"
-      forecastItem.style.animationDelay = `${i * 0.1}s`
 
       forecastItem.innerHTML = `
         <div class="forecast-day">${dayName}</div>
@@ -336,9 +367,12 @@ class WeatherApp {
         </div>
       `
 
-      this.forecastContainer.appendChild(forecastItem)
+      fragment.appendChild(forecastItem)
     }
 
+    // Single DOM update
+    this.forecastContainer.innerHTML = ""
+    this.forecastContainer.appendChild(fragment)
     this.forecastSection.classList.remove("hidden")
   }
 
@@ -425,6 +459,7 @@ class WeatherApp {
   }
 
   showLoading() {
+    this.isLoading = true
     this.loadingSpinner.classList.remove("hidden")
     this.weatherCard.classList.add("hidden")
     this.forecastSection.classList.add("hidden")
@@ -432,6 +467,7 @@ class WeatherApp {
   }
 
   hideLoading() {
+    this.isLoading = false
     this.loadingSpinner.classList.add("hidden")
   }
 
@@ -446,11 +482,21 @@ class WeatherApp {
   hideError() {
     this.errorMessage.classList.add("hidden")
   }
+
+  // Cleanup method for performance
+  destroy() {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId)
+    }
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer)
+    }
+  }
 }
 
-// Add dynamic CSS animations
-const style = document.createElement("style")
-style.textContent = `
+// Performance-optimized CSS animations
+const optimizedStyles = document.createElement("style")
+optimizedStyles.textContent = `
   @keyframes ripple {
     to {
       transform: scale(2);
@@ -458,36 +504,61 @@ style.textContent = `
     }
   }
   
-  @keyframes clickParticle {
+  @keyframes cursorFade {
     0% {
-      transform: translate(0, 0) scale(1);
       opacity: 1;
+      transform: scale(1);
     }
     100% {
-      transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px) scale(0);
       opacity: 0;
+      transform: scale(0);
     }
   }
   
   .animate-in {
-    animation: slideInUp 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) both;
+    animation: slideInUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
   }
   
   @keyframes slideInUp {
     0% {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translate3d(0, 20px, 0);
     }
     100% {
       opacity: 1;
-      transform: translateY(0);
+      transform: translate3d(0, 0, 0);
     }
   }
 `
-document.head.appendChild(style)
+document.head.appendChild(optimizedStyles)
 
-// Initialize app
+// Initialize app with performance monitoring
 document.addEventListener("DOMContentLoaded", () => {
-  new WeatherApp()
+  // Performance mark
+  performance.mark("weather-app-start")
+
+  const app = new WeatherApp()
+
+  // Performance measure
+  performance.mark("weather-app-ready")
+  performance.measure("weather-app-init", "weather-app-start", "weather-app-ready")
+
+  // Cleanup on page unload
+  window.addEventListener("beforeunload", () => {
+    app.destroy()
+  })
 })
-      
+
+// Service Worker registration for caching (optional)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((registration) => {
+        console.log("SW registered: ", registration)
+      })
+      .catch((registrationError) => {
+        console.log("SW registration failed: ", registrationError)
+      })
+  })
+      }
