@@ -1,305 +1,315 @@
 class WeatherApp {
-    constructor() {
-        this.apiKey = ''; // Usando API gratuita sem chave
-        this.initializeElements();
-        this.bindEvents();
-        this.updateCurrentDate();
+  constructor() {
+    this.geocodingAPI = "https://geocoding-api.open-meteo.com/v1/search"
+    this.weatherAPI = "https://api.open-meteo.com/v1/forecast"
+    this.initializeElements()
+    this.bindEvents()
+    this.updateCurrentDate()
+  }
+
+  initializeElements() {
+    this.cityInput = document.getElementById("cityInput")
+    this.searchBtn = document.getElementById("searchBtn")
+    this.locationBtn = document.getElementById("locationBtn")
+    this.weatherCard = document.getElementById("weatherCard")
+    this.forecastSection = document.getElementById("forecastSection")
+    this.loadingSpinner = document.getElementById("loadingSpinner")
+    this.errorMessage = document.getElementById("errorMessage")
+
+    // Weather display elements
+    this.cityName = document.getElementById("cityName")
+    this.currentDate = document.getElementById("currentDate")
+    this.weatherIcon = document.getElementById("weatherIcon")
+    this.temperature = document.getElementById("temperature")
+    this.weatherDescription = document.getElementById("weatherDescription")
+    this.feelsLike = document.getElementById("feelsLike")
+    this.windSpeed = document.getElementById("windSpeed")
+    this.humidity = document.getElementById("humidity")
+    this.visibility = document.getElementById("visibility")
+    this.pressure = document.getElementById("pressure")
+    this.forecastContainer = document.getElementById("forecastContainer")
+    this.errorText = document.getElementById("errorText")
+  }
+
+  bindEvents() {
+    this.searchBtn.addEventListener("click", () => this.handleSearch())
+    this.locationBtn.addEventListener("click", () => this.getCurrentLocation())
+    this.cityInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        this.handleSearch()
+      }
+    })
+  }
+
+  updateCurrentDate() {
+    const now = new Date()
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }
+    this.currentDate.textContent = now.toLocaleDateString("pt-BR", options)
+  }
+
+  async handleSearch() {
+    const city = this.cityInput.value.trim()
+    if (!city) {
+      this.showError("Por favor, digite o nome de uma cidade.")
+      return
     }
 
-    initializeElements() {
-        this.cityInput = document.getElementById('cityInput');
-        this.searchBtn = document.getElementById('searchBtn');
-        this.locationBtn = document.getElementById('locationBtn');
-        this.weatherCard = document.getElementById('weatherCard');
-        this.forecastSection = document.getElementById('forecastSection');
-        this.loadingSpinner = document.getElementById('loadingSpinner');
-        this.errorMessage = document.getElementById('errorMessage');
-        
-        // Weather display elements
-        this.cityName = document.getElementById('cityName');
-        this.currentDate = document.getElementById('currentDate');
-        this.weatherIcon = document.getElementById('weatherIcon');
-        this.temperature = document.getElementById('temperature');
-        this.weatherDescription = document.getElementById('weatherDescription');
-        this.feelsLike = document.getElementById('feelsLike');
-        this.windSpeed = document.getElementById('windSpeed');
-        this.humidity = document.getElementById('humidity');
-        this.visibility = document.getElementById('visibility');
-        this.pressure = document.getElementById('pressure');
-        this.forecastContainer = document.getElementById('forecastContainer');
-        this.errorText = document.getElementById('errorText');
+    await this.getWeatherByCity(city)
+  }
+
+  async getCurrentLocation() {
+    if (!navigator.geolocation) {
+      this.showError("Geolocalização não é suportada pelo seu navegador.")
+      return
     }
 
-    bindEvents() {
-        this.searchBtn.addEventListener('click', () => this.handleSearch());
-        this.locationBtn.addEventListener('click', () => this.getCurrentLocation());
-        this.cityInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.handleSearch();
-            }
-        });
+    this.showLoading()
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        await this.getWeatherByCoords(latitude, longitude)
+      },
+      (error) => {
+        this.hideLoading()
+        this.showError("Não foi possível obter sua localização. Verifique as permissões do navegador.")
+      },
+    )
+  }
+
+  async getWeatherByCity(city) {
+    this.showLoading()
+
+    try {
+      // Primeiro, obter coordenadas da cidade usando geocoding
+      const geocodingUrl = `${this.geocodingAPI}?name=${encodeURIComponent(city)}&count=1&language=pt&format=json`
+      const geocodingResponse = await fetch(geocodingUrl)
+
+      if (!geocodingResponse.ok) {
+        throw new Error("Erro ao buscar localização")
+      }
+
+      const geocodingData = await geocodingResponse.json()
+
+      if (!geocodingData.results || geocodingData.results.length === 0) {
+        this.showError("Cidade não encontrada. Verifique o nome e tente novamente.")
+        return
+      }
+
+      const location = geocodingData.results[0]
+      await this.getWeatherByCoords(location.latitude, location.longitude, location.name, location.country)
+    } catch (error) {
+      this.hideLoading()
+      this.showError("Erro ao buscar dados da cidade. Tente novamente.")
+      console.error("Erro:", error)
+    }
+  }
+
+  async getWeatherByCoords(lat, lon, cityName = "Sua Localização", country = "") {
+    try {
+      // Obter dados meteorológicos atuais e previsão
+      const weatherUrl = `${this.weatherAPI}?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=6`
+
+      const weatherResponse = await fetch(weatherUrl)
+
+      if (!weatherResponse.ok) {
+        throw new Error("Erro ao obter dados meteorológicos")
+      }
+
+      const weatherData = await weatherResponse.json()
+
+      // Processar e exibir dados
+      this.displayWeather(weatherData, cityName, country)
+      this.displayForecast(weatherData.daily)
+    } catch (error) {
+      this.hideLoading()
+      this.showError("Erro ao obter dados meteorológicos. Tente novamente.")
+      console.error("Erro:", error)
+    }
+  }
+
+  displayWeather(data, cityName, country) {
+    this.hideLoading()
+    this.hideError()
+
+    const current = data.current
+    const currentUnits = data.current_units
+
+    // Atualizar informações principais
+    this.cityName.textContent = country ? `${cityName}, ${country}` : cityName
+    this.weatherIcon.textContent = this.getWeatherIcon(current.weather_code, current.is_day)
+    this.temperature.textContent = Math.round(current.temperature_2m)
+    this.weatherDescription.textContent = this.getWeatherDescription(current.weather_code)
+    this.feelsLike.textContent = `Sensação térmica: ${Math.round(current.apparent_temperature)}°C`
+
+    // Atualizar detalhes
+    this.windSpeed.textContent = `${Math.round(current.wind_speed_10m)} km/h`
+    this.humidity.textContent = `${current.relative_humidity_2m}%`
+    this.visibility.textContent = this.getVisibilityFromCloudCover(current.cloud_cover)
+    this.pressure.textContent = `${Math.round(current.pressure_msl)} hPa`
+
+    // Mostrar card do clima
+    this.weatherCard.classList.remove("hidden")
+  }
+
+  displayForecast(dailyData) {
+    this.forecastContainer.innerHTML = ""
+
+    // Pular o primeiro dia (hoje) e mostrar os próximos 5 dias
+    for (let i = 1; i < Math.min(6, dailyData.time.length); i++) {
+      const date = new Date(dailyData.time[i])
+      const dayName = this.getDayName(date, i)
+
+      const forecastItem = document.createElement("div")
+      forecastItem.className = "forecast-item"
+
+      forecastItem.innerHTML = `
+                <div class="forecast-day">${dayName}</div>
+                <div class="forecast-icon">${this.getWeatherIcon(dailyData.weather_code[i], true)}</div>
+                <div class="forecast-temp">
+                    <div style="font-size: 1.1rem; font-weight: 600;">${Math.round(dailyData.temperature_2m_max[i])}°</div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">${Math.round(dailyData.temperature_2m_min[i])}°</div>
+                </div>
+            `
+
+      this.forecastContainer.appendChild(forecastItem)
     }
 
-    updateCurrentDate() {
-        const now = new Date();
-        const options = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        };
-        this.currentDate.textContent = now.toLocaleDateString('pt-BR', options);
+    this.forecastSection.classList.remove("hidden")
+  }
+
+  getDayName(date, index) {
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    if (index === 1) return "Amanhã"
+
+    const days = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
+    return days[date.getDay()]
+  }
+
+  getWeatherIcon(weatherCode, isDay = true) {
+    // WMO Weather interpretation codes
+    const weatherIcons = {
+      0: isDay ? "☀️" : "🌙", // Clear sky
+      1: isDay ? "🌤️" : "🌙", // Mainly clear
+      2: "⛅", // Partly cloudy
+      3: "☁️", // Overcast
+      45: "🌫️", // Fog
+      48: "🌫️", // Depositing rime fog
+      51: "🌦️", // Light drizzle
+      53: "🌦️", // Moderate drizzle
+      55: "🌧️", // Dense drizzle
+      56: "🌨️", // Light freezing drizzle
+      57: "🌨️", // Dense freezing drizzle
+      61: "🌧️", // Slight rain
+      63: "🌧️", // Moderate rain
+      65: "🌧️", // Heavy rain
+      66: "🌨️", // Light freezing rain
+      67: "🌨️", // Heavy freezing rain
+      71: "❄️", // Slight snow fall
+      73: "❄️", // Moderate snow fall
+      75: "❄️", // Heavy snow fall
+      77: "❄️", // Snow grains
+      80: "🌦️", // Slight rain showers
+      81: "🌧️", // Moderate rain showers
+      82: "🌧️", // Violent rain showers
+      85: "🌨️", // Slight snow showers
+      86: "🌨️", // Heavy snow showers
+      95: "⛈️", // Thunderstorm
+      96: "⛈️", // Thunderstorm with slight hail
+      99: "⛈️", // Thunderstorm with heavy hail
     }
 
-    async handleSearch() {
-        const city = this.cityInput.value.trim();
-        if (!city) {
-            this.showError('Por favor, digite o nome de uma cidade.');
-            return;
-        }
-        
-        await this.getWeatherByCity(city);
+    return weatherIcons[weatherCode] || "🌤️"
+  }
+
+  getWeatherDescription(weatherCode) {
+    const descriptions = {
+      0: "Céu limpo",
+      1: "Principalmente limpo",
+      2: "Parcialmente nublado",
+      3: "Nublado",
+      45: "Neblina",
+      48: "Neblina com geada",
+      51: "Garoa leve",
+      53: "Garoa moderada",
+      55: "Garoa intensa",
+      56: "Garoa congelante leve",
+      57: "Garoa congelante intensa",
+      61: "Chuva leve",
+      63: "Chuva moderada",
+      65: "Chuva forte",
+      66: "Chuva congelante leve",
+      67: "Chuva congelante forte",
+      71: "Neve leve",
+      73: "Neve moderada",
+      75: "Neve forte",
+      77: "Granizo de neve",
+      80: "Pancadas de chuva leves",
+      81: "Pancadas de chuva moderadas",
+      82: "Pancadas de chuva violentas",
+      85: "Pancadas de neve leves",
+      86: "Pancadas de neve fortes",
+      95: "Tempestade",
+      96: "Tempestade com granizo leve",
+      99: "Tempestade com granizo forte",
     }
 
-    async getCurrentLocation() {
-        if (!navigator.geolocation) {
-            this.showError('Geolocalização não é suportada pelo seu navegador.');
-            return;
-        }
+    return descriptions[weatherCode] || "Condição desconhecida"
+  }
 
-        this.showLoading();
-        
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                await this.getWeatherByCoords(latitude, longitude);
-            },
-            (error) => {
-                this.hideLoading();
-                this.showError('Não foi possível obter sua localização. Verifique as permissões do navegador.');
-            }
-        );
-    }
+  getVisibilityFromCloudCover(cloudCover) {
+    // Estimar visibilidade baseada na cobertura de nuvens
+    if (cloudCover <= 20) return "> 10 km"
+    if (cloudCover <= 40) return "8-10 km"
+    if (cloudCover <= 60) return "5-8 km"
+    if (cloudCover <= 80) return "3-5 km"
+    return "< 3 km"
+  }
 
-    async getWeatherByCity(city) {
-        this.showLoading();
-        
-        try {
-            // Usando API gratuita do OpenWeatherMap (sem chave para demo)
-            // Em produção, você precisaria de uma chave de API
-            const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=demo_key&units=metric&lang=pt_br`);
-            
-            // Como a API acima não funcionará sem chave real, vamos simular dados realistas
-            if (!response.ok) {
-                // Simulando dados para demonstração
-                const simulatedData = this.generateSimulatedWeatherData(city);
-                this.displayWeather(simulatedData);
-                await this.getForecast(city);
-                return;
-            }
-            
-            const data = await response.json();
-            this.displayWeather(data);
-            await this.getForecast(city);
-            
-        } catch (error) {
-            // Fallback para dados simulados
-            const simulatedData = this.generateSimulatedWeatherData(city);
-            this.displayWeather(simulatedData);
-            await this.getForecast(city);
-        }
-    }
+  showLoading() {
+    this.loadingSpinner.classList.remove("hidden")
+    this.weatherCard.classList.add("hidden")
+    this.forecastSection.classList.add("hidden")
+    this.errorMessage.classList.add("hidden")
+  }
 
-    async getWeatherByCoords(lat, lon) {
-        this.showLoading();
-        
-        try {
-            // Simulando dados baseados em coordenadas
-            const simulatedData = this.generateSimulatedWeatherData('Sua Localização', lat, lon);
-            this.displayWeather(simulatedData);
-            await this.getForecast('Sua Localização');
-            
-        } catch (error) {
-            this.hideLoading();
-            this.showError('Erro ao obter dados do clima para sua localização.');
-        }
-    }
+  hideLoading() {
+    this.loadingSpinner.classList.add("hidden")
+  }
 
-    generateSimulatedWeatherData(city, lat = null, lon = null) {
-        const weatherConditions = [
-            { condition: 'ensolarado', icon: '☀️', temp: 28, desc: 'Céu limpo' },
-            { condition: 'parcialmente nublado', icon: '⛅', temp: 24, desc: 'Parcialmente nublado' },
-            { condition: 'nublado', icon: '☁️', temp: 20, desc: 'Nublado' },
-            { condition: 'chuvoso', icon: '🌧️', temp: 18, desc: 'Chuva leve' },
-            { condition: 'tempestuoso', icon: '⛈️', temp: 16, desc: 'Tempestade' }
-        ];
-        
-        const randomWeather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
-        const tempVariation = Math.floor(Math.random() * 10) - 5; // -5 a +5
-        
-        return {
-            name: city,
-            main: {
-                temp: randomWeather.temp + tempVariation,
-                feels_like: randomWeather.temp + tempVariation + Math.floor(Math.random() * 4) - 2,
-                humidity: Math.floor(Math.random() * 40) + 40, // 40-80%
-                pressure: Math.floor(Math.random() * 50) + 1000 // 1000-1050 hPa
-            },
-            weather: [{
-                description: randomWeather.desc,
-                icon: randomWeather.icon
-            }],
-            wind: {
-                speed: Math.floor(Math.random() * 20) + 5 // 5-25 km/h
-            },
-            visibility: Math.floor(Math.random() * 5000) + 5000, // 5-10 km
-            coord: {
-                lat: lat || (Math.random() * 180 - 90),
-                lon: lon || (Math.random() * 360 - 180)
-            }
-        };
-    }
+  showError(message) {
+    this.errorText.textContent = message
+    this.errorMessage.classList.remove("hidden")
+    this.weatherCard.classList.add("hidden")
+    this.forecastSection.classList.add("hidden")
+    this.hideLoading()
+  }
 
-    displayWeather(data) {
-        this.hideLoading();
-        this.hideError();
-        
-        // Atualizar informações principais
-        this.cityName.textContent = data.name;
-        this.weatherIcon.textContent = this.getWeatherIcon(data.weather[0].description);
-        this.temperature.textContent = Math.round(data.main.temp);
-        this.weatherDescription.textContent = data.weather[0].description;
-        this.feelsLike.textContent = `Sensação térmica: ${Math.round(data.main.feels_like)}°C`;
-        
-        // Atualizar detalhes
-        this.windSpeed.textContent = `${Math.round(data.wind.speed)} km/h`;
-        this.humidity.textContent = `${data.main.humidity}%`;
-        this.visibility.textContent = `${Math.round(data.visibility / 1000)} km`;
-        this.pressure.textContent = `${data.main.pressure} hPa`;
-        
-        // Mostrar card do clima
-        this.weatherCard.classList.remove('hidden');
-    }
-
-    async getForecast(city) {
-        try {
-            // Simulando previsão para os próximos 5 dias
-            const forecastData = this.generateSimulatedForecast();
-            this.displayForecast(forecastData);
-        } catch (error) {
-            console.error('Erro ao obter previsão:', error);
-        }
-    }
-
-    generateSimulatedForecast() {
-        const days = ['Amanhã', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-        const weatherOptions = [
-            { icon: '☀️', temp: 28 },
-            { icon: '⛅', temp: 25 },
-            { icon: '☁️', temp: 22 },
-            { icon: '🌧️', temp: 19 },
-            { icon: '⛈️', temp: 17 }
-        ];
-        
-        return days.map(day => {
-            const weather = weatherOptions[Math.floor(Math.random() * weatherOptions.length)];
-            const tempVariation = Math.floor(Math.random() * 8) - 4;
-            
-            return {
-                day: day,
-                icon: weather.icon,
-                temp: weather.temp + tempVariation
-            };
-        });
-    }
-
-    displayForecast(forecastData) {
-        this.forecastContainer.innerHTML = '';
-        
-        forecastData.forEach(item => {
-            const forecastItem = document.createElement('div');
-            forecastItem.className = 'forecast-item';
-            
-            forecastItem.innerHTML = `
-                <div class="forecast-day">${item.day}</div>
-                <div class="forecast-icon">${item.icon}</div>
-                <div class="forecast-temp">${item.temp}°C</div>
-            `;
-            
-            this.forecastContainer.appendChild(forecastItem);
-        });
-        
-        this.forecastSection.classList.remove('hidden');
-    }
-
-    getWeatherIcon(description) {
-        const iconMap = {
-            'céu limpo': '☀️',
-            'parcialmente nublado': '⛅',
-            'nublado': '☁️',
-            'chuva leve': '🌧️',
-            'chuva': '🌧️',
-            'tempestade': '⛈️',
-            'neve': '❄️',
-            'neblina': '🌫️',
-            'nevoeiro': '🌫️'
-        };
-        
-        const lowerDesc = description.toLowerCase();
-        
-        for (const [key, icon] of Object.entries(iconMap)) {
-            if (lowerDesc.includes(key)) {
-                return icon;
-            }
-        }
-        
-        // Ícones baseados em palavras-chave
-        if (lowerDesc.includes('sol') || lowerDesc.includes('limpo')) return '☀️';
-        if (lowerDesc.includes('chuv')) return '🌧️';
-        if (lowerDesc.includes('nubl') || lowerDesc.includes('nuvem')) return '☁️';
-        if (lowerDesc.includes('tempest') || lowerDesc.includes('trovoada')) return '⛈️';
-        if (lowerDesc.includes('neve')) return '❄️';
-        if (lowerDesc.includes('nebl') || lowerDesc.includes('névoa')) return '🌫️';
-        
-        return '🌤️'; // Ícone padrão
-    }
-
-    showLoading() {
-        this.loadingSpinner.classList.remove('hidden');
-        this.weatherCard.classList.add('hidden');
-        this.forecastSection.classList.add('hidden');
-        this.errorMessage.classList.add('hidden');
-    }
-
-    hideLoading() {
-        this.loadingSpinner.classList.add('hidden');
-    }
-
-    showError(message) {
-        this.errorText.textContent = message;
-        this.errorMessage.classList.remove('hidden');
-        this.weatherCard.classList.add('hidden');
-        this.forecastSection.classList.add('hidden');
-        this.hideLoading();
-    }
-
-    hideError() {
-        this.errorMessage.classList.add('hidden');
-    }
+  hideError() {
+    this.errorMessage.classList.add("hidden")
+  }
 }
 
 // Inicializar a aplicação quando o DOM estiver carregado
-document.addEventListener('DOMContentLoaded', () => {
-    new WeatherApp();
-});
+document.addEventListener("DOMContentLoaded", () => {
+  new WeatherApp()
+})
 
 // Adicionar alguns efeitos visuais extras
-document.addEventListener('mousemove', (e) => {
-    const cursor = document.querySelector('.cursor');
-    if (!cursor) {
-        const newCursor = document.createElement('div');
-        newCursor.className = 'cursor';
-        newCursor.style.cssText = `
+document.addEventListener("mousemove", (e) => {
+  const cursor = document.querySelector(".cursor")
+  if (!cursor) {
+    const newCursor = document.createElement("div")
+    newCursor.className = "cursor"
+    newCursor.style.cssText = `
             position: fixed;
             width: 20px;
             height: 20px;
@@ -308,11 +318,11 @@ document.addEventListener('mousemove', (e) => {
             pointer-events: none;
             z-index: 9999;
             transition: transform 0.1s ease;
-        `;
-        document.body.appendChild(newCursor);
-    }
-    
-    const cursorElement = document.querySelector('.cursor');
-    cursorElement.style.left = e.clientX - 10 + 'px';
-    cursorElement.style.top = e.clientY - 10 + 'px';
-});
+        `
+    document.body.appendChild(newCursor)
+  }
+
+  const cursorElement = document.querySelector(".cursor")
+  cursorElement.style.left = e.clientX - 10 + "px"
+  cursorElement.style.top = e.clientY - 10 + "px"
+})
